@@ -80,7 +80,7 @@ class DevPanelController {
 
   Future<void> showNotificationNow() async {
     final scheduler = _ref.read(reminderSchedulerProvider);
-    await scheduler.requestPermissions();
+    await scheduler.requestNotificationPermission();
     await scheduler.showTestNotification(
       title: 'ТЕСТ: Calista Tracker',
       body: 'Уведомление сработало сразу. Панель тестов работает.',
@@ -89,7 +89,7 @@ class DevPanelController {
 
   Future<void> scheduleNotification(Duration delay) async {
     final scheduler = _ref.read(reminderSchedulerProvider);
-    await scheduler.requestPermissions();
+    await scheduler.requestNotificationPermission();
     await scheduler.scheduleTestNotification(
       delay: delay,
       title: 'ТЕСТ: таймер',

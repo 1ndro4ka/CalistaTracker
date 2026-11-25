@@ -71,6 +71,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - assets/images/calista_logo.png
+    - assets/images/calista_logo_white.png
+
   fonts:
     - family: JetBrainsMono
       fonts:

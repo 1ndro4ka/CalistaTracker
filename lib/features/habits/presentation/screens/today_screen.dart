@@ -30,11 +30,25 @@ class TodayScreen extends ConsumerWidget {
             AppFeedback.selection();
             context.push('/dev');
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(AppConstants.appName, style: AppTypography.titleLarge),
-              Text(formattedDate, style: AppTypography.caption),
+              Image.asset(
+                'assets/images/calista_logo_white.png',
+                width: 26,
+                height: 26,
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    AppConstants.appName,
+                    style: AppTypography.titleLarge,
+                  ),
+                  Text(formattedDate, style: AppTypography.caption),
+                ],
+              ),
             ],
           ),
         ),
@@ -283,18 +297,10 @@ class _EmptyHabitsState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border, width: 1),
-              ),
-              child: const Icon(
-                Icons.all_inclusive,
-                size: 28,
-                color: AppColors.textPrimary,
-              ),
+            Image.asset(
+              'assets/images/calista_logo_white.png',
+              width: 72,
+              height: 72,
             ),
             const SizedBox(height: 20),
             const Text(

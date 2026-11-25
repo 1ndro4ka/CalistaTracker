@@ -161,6 +161,33 @@ class LocalReminderScheduler implements ReminderScheduler {
   }
 
   @override
+  Future<bool> requestNotificationPermission() async {
+    await initialize();
+    if (!_available) return true; // no-op на desktop/web
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return await _androidPlugin?.requestNotificationsPermission() ?? true;
+      }
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final ios = _plugin
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
+        return await ios?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
+      }
+    } catch (error) {
+      debugPrint('Calista: ошибка запроса разрешения на уведомления: $error');
+    }
+    return false;
+  }
+
+  @override
   Future<void> syncHabitReminder(Habit habit) async {
     await initialize();
     // Сначала всегда снимаем старое расписание: привычка могла быть
@@ -266,6 +293,7 @@ class LocalReminderScheduler implements ReminderScheduler {
       id: _testNotificationId,
       title: title,
       body: body,
+      notificationDetails: _notificationDetails,
       payload: null,
     );
   }

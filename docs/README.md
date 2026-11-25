@@ -1,3 +1,5 @@
+<img src="assets/logo.png" width="110" alt="Calista Tracker logo" />
+
 # Документация Calista Tracker
 
 Проектные, аналитические и защитные материалы к индивидуальной производственной практике.

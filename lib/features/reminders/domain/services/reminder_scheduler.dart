@@ -12,6 +12,10 @@ abstract interface class ReminderScheduler {
   /// уведомления разрешены пользователем.
   Future<bool> requestPermissions();
 
+  /// Только разрешение на уведомления — без перехода в настройки точных будильников.
+  /// Используется секретной панелью для тестовых уведомлений.
+  Future<bool> requestNotificationPermission();
+
   /// Полностью пересоздаёт расписание для одной привычки.
   Future<void> syncHabitReminder(Habit habit);
 

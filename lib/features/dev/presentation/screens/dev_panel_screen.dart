@@ -64,7 +64,18 @@ class _DevPanelScreenState extends ConsumerState<DevPanelScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('СЕКРЕТНАЯ ПАНЕЛЬ', style: AppTypography.titleLarge),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/calista_logo_white.png',
+              width: 22,
+              height: 22,
+            ),
+            const SizedBox(width: 10),
+            const Text('СЕКРЕТНАЯ ПАНЕЛЬ', style: AppTypography.titleLarge),
+          ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

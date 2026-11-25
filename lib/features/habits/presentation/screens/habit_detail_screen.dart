@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/providers/clock_provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/freeze_icon.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/date_formatters.dart';
 import '../../domain/entities/habit.dart';
@@ -181,11 +182,11 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _MetricCard(
-                      label: 'ЗАМОРОЗКИ МЕСЯЦА',
+                      label: 'ИСПОЛЬЗОВАНО ЗАМОРОЗОК',
                       value:
-                          '❄ ${_streakInfo.freezesRemaining} / ${habit.monthlyFreezesAllowed}',
-                      subtext:
-                          'Использовано: ${_streakInfo.freezesUsedThisMonth}',
+                          '${_streakInfo.freezesUsedThisMonth} / ${habit.monthlyFreezesAllowed}',
+                      subtext: 'Осталось: ${_streakInfo.freezesRemaining}',
+                      leading: const FreezeIcon(size: 16),
                     ),
                   ),
                 ],
@@ -301,7 +302,7 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'При случайном пропуске запланированного дня серия не сгорает, а помечается как [❄ Заморожено] за счёт вашей месячной квоты.',
+                        'При случайном пропуске запланированного дня серия не сгорает, а помечается как [Заморожено] за счёт вашей месячной квоты.',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -375,11 +376,13 @@ class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
   final String subtext;
+  final Widget? leading;
 
   const _MetricCard({
     required this.label,
     required this.value,
     required this.subtext,
+    this.leading,
   });
 
   @override
@@ -396,11 +399,18 @@ class _MetricCard extends StatelessWidget {
         children: [
           Text(label, style: AppTypography.caption),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: AppTypography.titleMedium.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 6)],
+              Flexible(
+                child: Text(
+                  value,
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(

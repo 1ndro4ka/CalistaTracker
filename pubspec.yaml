@@ -45,6 +45,7 @@ dependencies:
   flutter_timezone: ^5.1.1
   intl: ^0.20.3
   flutter_animate: ^4.5.2
+  flutter_svg: ^2.5.0
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +75,7 @@ flutter:
   assets:
     - assets/images/calista_logo.png
     - assets/images/calista_logo_white.png
+    - assets/icons/snowflake.svg
 
   fonts:
     - family: JetBrainsMono

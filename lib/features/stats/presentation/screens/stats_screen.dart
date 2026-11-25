@@ -5,14 +5,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/freeze_icon.dart';
 import '../../../habits/presentation/providers/habits_provider.dart';
+import '../providers/weekday_stats_provider.dart';
 
-class StatsScreen extends ConsumerWidget {
+class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<StatsScreen> createState() => _StatsScreenState();
+}
+
+class _StatsScreenState extends ConsumerState<StatsScreen> {
+  int? _selectedWeekday;
+
+  @override
+  Widget build(BuildContext context) {
     final habitsAsync = ref.watch(habitsProvider);
+    final weekdayAsync = ref.watch(weekdayStatsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('СТАТИСТИКА И СТАБИЛЬНОСТЬ')),
@@ -20,18 +30,24 @@ class StatsScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.textPrimary),
         ),
-        error: (err, _) => Center(child: Text('Ошибка: $err')),
+        error: (err, _) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(child: Text('Ошибка: $err')),
+        ),
         data: (habits) {
           if (habits.isEmpty) {
-            return const Center(
-              child: Text(
-                'Нет данных для статистики. Создайте хотя бы одну привычку.',
-                style: AppTypography.bodySmall,
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'Нет данных для статистики. Создайте хотя бы одну привычку.',
+                  style: AppTypography.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
 
-          // Calculate aggregate metrics
           double totalStability = 0;
           int totalFreezesUsed = 0;
           int maxStreak = 0;
@@ -47,11 +63,19 @@ class StatsScreen extends ConsumerWidget {
           final avgStability = (totalStability / habits.length).toStringAsFixed(
             1,
           );
+          final weekdayStats = weekdayAsync.value ?? const <WeekdayStat>[];
+          final selected = _selectedWeekday == null
+              ? null
+              : weekdayStats.isEmpty
+              ? null
+              : weekdayStats.firstWhere(
+                  (stat) => stat.weekday == _selectedWeekday,
+                  orElse: () => weekdayStats.first,
+                );
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Large Aggregate Score Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -94,66 +118,29 @@ class StatsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Saved Streaks & Best Streak Cards
+              // Обе карточки одинаковой высоты благодаря stretch + SizedBox.
               Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.border, width: 0.8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'СПАСЕНО СЕРИЙ',
-                            style: AppTypography.caption,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '❄ $totalFreezesUsed',
-                            style: AppTypography.titleLarge,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Заморозок в этом месяце',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                    child: SizedBox(
+                      height: 122,
+                      child: _MetricBox(
+                        label: 'СПАСЕНО СЕРИЙ',
+                        value: '$totalFreezesUsed',
+                        subtext: 'Заморозок в этом месяце',
+                        leading: const FreezeIcon(size: 18),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.border, width: 0.8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'ЛУЧШАЯ СЕРИЯ',
-                            style: AppTypography.caption,
-                          ),
-                          const SizedBox(height: 8),
-                          Text('$maxStreak д', style: AppTypography.titleLarge),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Максимум среди всех',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ],
+                    child: SizedBox(
+                      height: 122,
+                      child: _MetricBox(
+                        label: 'ЛУЧШАЯ СЕРИЯ',
+                        value: '$maxStreak д',
+                        subtext: 'Максимум среди всех',
                       ),
                     ),
                   ),
@@ -161,7 +148,6 @@ class StatsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Weekly Day Distribution
               const Text(
                 'АКТИВНОСТЬ ПО ДНЯМ НЕДЕЛИ',
                 style: AppTypography.caption,
@@ -174,23 +160,83 @@ class StatsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AppColors.border, width: 0.8),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _WeekdayBar(label: 'ПН', heightPercent: 0.9),
-                    _WeekdayBar(label: 'ВТ', heightPercent: 0.8),
-                    _WeekdayBar(label: 'СР', heightPercent: 0.95),
-                    _WeekdayBar(label: 'ЧТ', heightPercent: 0.7),
-                    _WeekdayBar(label: 'ПТ', heightPercent: 0.85),
-                    _WeekdayBar(label: 'СБ', heightPercent: 0.6),
-                    _WeekdayBar(label: 'ВС', heightPercent: 0.75),
+                    weekdayAsync.when(
+                      loading: () => const SizedBox(
+                        height: 120,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      error: (error, _) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        child: Text(
+                          'Не удалось загрузить график: $error',
+                          style: AppTypography.caption,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      data: (stats) => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          for (final stat in stats)
+                            _WeekdayBar(
+                              stat: stat,
+                              selected: _selectedWeekday == stat.weekday,
+                              onTap: () => setState(() {
+                                _selectedWeekday =
+                                    _selectedWeekday == stat.weekday
+                                    ? null
+                                    : stat.weekday;
+                              }),
+                            ),
+                        ],
+                      ),
+                    ),
+                    AnimatedSize(
+                      duration: MotionTokens.getDuration(
+                        context,
+                        MotionTokens.durationMedium,
+                      ),
+                      curve: MotionTokens.curveAppear,
+                      alignment: Alignment.topCenter,
+                      child: selected == null
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text(
+                                'Нажмите на день, чтобы увидеть детали',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            )
+                          : AnimatedSwitcher(
+                              duration: MotionTokens.getDuration(
+                                context,
+                                MotionTokens.durationFast,
+                              ),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  ),
+                              child: KeyedSubtree(
+                                key: ValueKey(selected.weekday),
+                                child: _DayDetails(stat: selected),
+                              ),
+                            ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Habits List Breakdown
               const Text(
                 'СТАБИЛЬНОСТЬ ПО ПРИВЫЧКАМ',
                 style: AppTypography.caption,
@@ -259,36 +305,213 @@ class StatsScreen extends ConsumerWidget {
   }
 }
 
-class _WeekdayBar extends StatelessWidget {
+class _MetricBox extends StatelessWidget {
   final String label;
-  final double heightPercent; // 0.0 to 1.0
+  final String value;
+  final String subtext;
+  final Widget? leading;
 
-  const _WeekdayBar({required this.label, required this.heightPercent});
+  const _MetricBox({
+    required this.label,
+    required this.value,
+    required this.subtext,
+    this.leading,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TweenAnimationBuilder<double>(
-          tween: Tween<double>(begin: 0, end: 80 * heightPercent),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border, width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTypography.caption),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 6)],
+              Flexible(child: Text(value, style: AppTypography.titleLarge)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtext,
+            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekdayBar extends StatelessWidget {
+  final WeekdayStat stat;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _WeekdayBar({
+    required this.stat,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final height = 24.0 + 76.0 * stat.rate;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
           duration: MotionTokens.getDuration(
             context,
-            MotionTokens.durationSlow,
+            MotionTokens.durationMedium,
           ),
           curve: MotionTokens.curveAppear,
-          builder: (context, height, _) => Container(
-            width: 16,
-            height: height,
-            decoration: BoxDecoration(
-              color: AppColors.textPrimary,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.surfaceMuted : Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            border: selected
+                ? Border.all(color: AppColors.borderHighlight, width: 0.8)
+                : null,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: height),
+                duration: MotionTokens.getDuration(
+                  context,
+                  MotionTokens.durationSlow,
+                ),
+                curve: MotionTokens.curveAppear,
+                builder: (context, value, _) => Container(
+                  width: 18,
+                  height: value,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                stat.label,
+                style: AppTypography.caption.copyWith(
+                  fontSize: 10,
+                  color: selected ? AppColors.textPrimary : AppColors.textMuted,
+                ),
+              ),
+              Text(
+                '${stat.completed}/${stat.scheduled}',
+                style: AppTypography.caption.copyWith(fontSize: 9),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Text(label, style: AppTypography.caption.copyWith(fontSize: 10)),
-      ],
+      ),
+    );
+  }
+}
+
+class _DayDetails extends StatelessWidget {
+  final WeekdayStat stat;
+
+  const _DayDetails({required this.stat});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'ДЕТАЛИ: ${stat.label}',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '${(stat.rate * 100).toStringAsFixed(0)}%',
+                style: AppTypography.caption,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (stat.habits.isEmpty)
+            Text(
+              'В этот день по расписанию нет привычек',
+              style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+            )
+          else
+            ...stat.habits.map(
+              (habit) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            habit.title,
+                            style: AppTypography.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          '${habit.completed}/${habit.scheduled}',
+                          style: AppTypography.caption,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: LinearProgressIndicator(
+                        value: habit.rate,
+                        minHeight: 3,
+                        backgroundColor: AppColors.surfaceMuted,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (habit.frozen > 0) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const FreezeIcon(size: 11),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Заморозок: ${habit.frozen}',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.freezeActive,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

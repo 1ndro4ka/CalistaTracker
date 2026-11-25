@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/providers/clock_provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/freeze_icon.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../reminders/presentation/providers/reminder_providers.dart';
+import '../../../reminders/presentation/widgets/time_picker_sheet.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/habit_schedule.dart';
 import '../providers/database_provider.dart';
@@ -78,26 +80,17 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
   }
 
   Future<void> _pickTime() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     await AppFeedback.selection();
     if (!mounted) return;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _reminderTime,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          timePickerTheme: const TimePickerThemeData(
-            backgroundColor: AppColors.surface,
-          ),
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) {
+    final picked = await TimePickerSheet.show(context, _reminderTime);
+    if (picked != null && mounted) {
       setState(() => _reminderTime = picked);
     }
   }
 
   Future<void> _save() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (!_formKey.currentState!.validate()) {
       await AppFeedback.error();
       return;
@@ -169,6 +162,8 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
             const SizedBox(height: 6),
             TextFormField(
               controller: _titleController,
+              textInputAction: TextInputAction.next,
+              onEditingComplete: () => FocusScope.of(context).nextFocus(),
               style: AppTypography.bodyMedium,
               decoration: InputDecoration(
                 hintText: 'Например: Чтение 20 страниц',
@@ -217,6 +212,8 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
             const SizedBox(height: 6),
             TextFormField(
               controller: _descController,
+              textInputAction: TextInputAction.done,
+              onEditingComplete: () => FocusScope.of(context).unfocus(),
               style: AppTypography.bodyMedium,
               maxLines: 2,
               decoration: InputDecoration(
@@ -364,6 +361,7 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
                     activeThumbColor: AppColors.textPrimary,
                     onChanged: (val) async {
                       final messenger = ScaffoldMessenger.of(context);
+                      FocusManager.instance.primaryFocus?.unfocus();
                       await AppFeedback.selection();
                       setState(() => _enableReminder = val);
                       if (!val) return;
@@ -406,7 +404,7 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
                 children: [
                   const Row(
                     children: [
-                      Text('❄', style: TextStyle(fontSize: 16)),
+                      FreezeIcon(size: 18),
                       SizedBox(width: 8),
                       Text(
                         'ГИБКАЯ СЕРИЯ (ЗАМОРОЗКИ)',

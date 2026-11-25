@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/edge_back_gesture.dart';
+import 'core/widgets/keyboard_dismisser.dart';
 import 'features/reminders/presentation/providers/reminder_providers.dart';
 
 class CalistaApp extends ConsumerStatefulWidget {
@@ -47,11 +49,15 @@ class _CalistaAppState extends ConsumerState<CalistaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: AppConstants.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      routerConfig: AppRouter.router,
+    return KeyboardDismisser(
+      child: EdgeBackGesture(
+        child: MaterialApp.router(
+          title: AppConstants.appName,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.darkTheme,
+          routerConfig: AppRouter.router,
+        ),
+      ),
     );
   }
 }

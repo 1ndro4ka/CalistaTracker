@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/widgets/freeze_icon.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/habits_provider.dart';
@@ -191,12 +192,19 @@ class _HabitCardState extends State<HabitCard>
                               width: 0.5,
                             ),
                           ),
-                          child: Text(
-                            '❄ ${streak.freezesRemaining}/${habit.monthlyFreezesAllowed}',
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 9,
-                              color: AppColors.freezeActive,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const FreezeIcon(size: 11),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${streak.freezesRemaining}/${habit.monthlyFreezesAllowed}',
+                                style: AppTypography.caption.copyWith(
+                                  fontSize: 9,
+                                  color: AppColors.freezeActive,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

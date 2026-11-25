@@ -78,7 +78,7 @@ void main() {
     expect(find.text('Медитация'), findsOneWidget);
     expect(find.text('12'), findsOneWidget);
     expect(find.text('92.5%'), findsOneWidget);
-    expect(find.text('❄ 1/2'), findsOneWidget);
+    expect(find.text('1/2'), findsOneWidget);
 
     // Tap checkbox
     await tester.tap(find.byType(GestureDetector).first);

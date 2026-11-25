@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/widgets/freeze_icon.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/habit.dart';
@@ -142,13 +143,7 @@ class HeatmapCalendar extends StatelessWidget {
                   ),
                   child: Center(
                     child: isFrozen
-                        ? const Text(
-                            '❄',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.freezeActive,
-                            ),
-                          )
+                        ? const FreezeIcon(size: 13)
                         : Text(
                             '$dayNumber',
                             style: AppTypography.caption.copyWith(
@@ -176,7 +171,7 @@ class HeatmapCalendar extends StatelessWidget {
             _LegendItem(
               color: AppColors.freezeBackground,
               borderColor: AppColors.freezeActive,
-              label: 'Заморожено (❄)',
+              label: 'Заморожено',
             ),
             SizedBox(width: 14),
             _LegendItem(

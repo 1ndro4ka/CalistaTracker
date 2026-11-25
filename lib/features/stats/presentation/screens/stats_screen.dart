@@ -118,9 +118,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Обе карточки одинаковой высоты благодаря stretch + SizedBox.
+              // Обе карточки одинаковой высоты thanks к фиксированному SizedBox.
               Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
                     child: SizedBox(

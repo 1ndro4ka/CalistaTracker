@@ -1013,6 +1013,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CompletionsTableTable completionsTable = $CompletionsTableTable(
     this,
   );
+  late final Index idxCompletionsHabitDate = Index(
+    'idx_completions_habit_date',
+    'CREATE INDEX idx_completions_habit_date ON completions_table (habit_id, date)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1020,6 +1024,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     habitsTable,
     completionsTable,
+    idxCompletionsHabitDate,
   ];
 }
 

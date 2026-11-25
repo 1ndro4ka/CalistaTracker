@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../reminders/presentation/providers/reminder_providers.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/stability_metrics.dart';
 import '../../domain/entities/streak_info.dart';
@@ -49,6 +50,7 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
     final compRepo = ref.read(completionRepositoryProvider);
     final streakUseCase = ref.read(calculateStreakUseCaseProvider);
     final stabilityUseCase = ref.read(calculateStabilityUseCaseProvider);
+    final autoFreezeUseCase = ref.read(applyAutoFreezeUseCaseProvider);
 
     final habits = await habitRepo.getAllHabits(includeArchived: false);
     final now = DateTime.now();
@@ -57,14 +59,28 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
     final items = <HabitItemViewData>[];
     for (final h in habits) {
       final completions = await compRepo.getCompletionsForHabit(h.id);
-      final streak = streakUseCase.execute(h, completions, currentDate: today);
-      final stability = stabilityUseCase.execute(
+
+      // Материализуем «Гибкую серию» перед расчётом метрик: календарь и
+      // статистика должны видеть реальные заморозки, а не только виртуальные.
+      final freezeResult = await autoFreezeUseCase.execute(
         h,
         completions,
         currentDate: today,
       );
+      final effectiveCompletions = freezeResult.allCompletions;
 
-      final isCompleted = completions.any((c) {
+      final streak = streakUseCase.execute(
+        h,
+        effectiveCompletions,
+        currentDate: today,
+      );
+      final stability = stabilityUseCase.execute(
+        h,
+        effectiveCompletions,
+        currentDate: today,
+      );
+
+      final isCompleted = effectiveCompletions.any((c) {
         final cd = DateTime(c.date.year, c.date.month, c.date.day);
         return cd == today && !c.isFrozen;
       });
@@ -122,12 +138,22 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
   Future<void> deleteHabit(String habitId) async {
     final manageUseCase = ref.read(manageHabitUseCaseProvider);
     await manageUseCase.deleteHabit(habitId);
+    try {
+      await ref.read(reminderSchedulerProvider).cancelHabitReminder(habitId);
+    } catch (_) {
+      // Напоминания не должны блокировать удаление привычки.
+    }
     state = await AsyncValue.guard(() => _fetchHabits());
   }
 
   Future<void> saveHabit(Habit habit) async {
     final manageUseCase = ref.read(manageHabitUseCaseProvider);
-    await manageUseCase.createOrUpdateHabit(habit);
+    final saved = await manageUseCase.createOrUpdateHabit(habit);
+    try {
+      await ref.read(reminderSchedulerProvider).syncHabitReminder(saved);
+    } catch (_) {
+      // Ошибка планировщика не должна отменять сохранение привычки.
+    }
     state = await AsyncValue.guard(() => _fetchHabits());
   }
 }

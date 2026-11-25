@@ -44,11 +44,18 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
     final compRepo = ref.read(completionRepositoryProvider);
     final streakUseCase = ref.read(calculateStreakUseCaseProvider);
     final stabilityUseCase = ref.read(calculateStabilityUseCaseProvider);
+    final autoFreezeUseCase = ref.read(applyAutoFreezeUseCaseProvider);
 
     final habit = await habitRepo.getHabitById(widget.habitId);
     if (habit != null) {
-      final completions = await compRepo.getCompletionsForHabit(habit.id);
+      final storedCompletions = await compRepo.getCompletionsForHabit(habit.id);
       final now = DateTime.now();
+      final freezeResult = await autoFreezeUseCase.execute(
+        habit,
+        storedCompletions,
+        currentDate: now,
+      );
+      final completions = freezeResult.allCompletions;
       final streak = streakUseCase.execute(
         habit,
         completions,
@@ -70,6 +77,19 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
     } else {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _toggleDate(DateTime date) async {
+    final toggle = ref.read(toggleCompletionUseCaseProvider);
+    final isCompleted = await toggle.execute(widget.habitId, date);
+    if (isCompleted) {
+      await AppFeedback.checkmark();
+    } else {
+      await AppFeedback.uncheck();
+    }
+
+    await _loadData();
+    await ref.read(habitsProvider.notifier).loadHabits();
   }
 
   @override
@@ -192,6 +212,12 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
             habit: habit,
             completions: _completions,
             month: _currentMonth,
+            onDayTap: _toggleDate,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Нажмите на прошедший день, чтобы отметить его или снять отметку.',
+            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 24),
 

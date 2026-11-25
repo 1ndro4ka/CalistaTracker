@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../reminders/presentation/providers/reminder_providers.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/habit_schedule.dart';
 import '../providers/database_provider.dart';
@@ -360,12 +361,30 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
                   Switch(
                     value: _enableReminder,
                     activeThumbColor: AppColors.textPrimary,
-                    onChanged: (val) {
-                      AppFeedback.selection();
+                    onChanged: (val) async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      await AppFeedback.selection();
                       setState(() => _enableReminder = val);
-                      if (val) {
-                        _pickTime();
+                      if (!val) return;
+
+                      // Разрешение запрашивается в момент первого включения
+                      // напоминания, а не при старте приложения.
+                      final granted = await ref
+                          .read(reminderSchedulerProvider)
+                          .requestPermissions();
+                      if (!granted && mounted) {
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            backgroundColor: AppColors.surfaceElevated,
+                            content: Text(
+                              'Уведомления запрещены в настройках системы. '
+                              'Напоминание сохранится, но не будет показано.',
+                              style: AppTypography.bodySmall,
+                            ),
+                          ),
+                        );
                       }
+                      if (mounted) await _pickTime();
                     },
                   ),
                 ],

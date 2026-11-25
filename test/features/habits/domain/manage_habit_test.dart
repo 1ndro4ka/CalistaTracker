@@ -149,5 +149,37 @@ void main() {
             .called(1);
       },
     );
+    test(
+      '23. Нажатие на замороженный день превращает его в выполнение',
+      () async {
+        final frozen = HabitCompletion(
+          id: 'frozen_1',
+          habitId: 'h_1',
+          date: testDate,
+          isFrozen: true,
+          recordedAt: testDate,
+        );
+        when(
+          () =>
+              mockCompletionRepo.getCompletionsByDateRange('h_1', any(), any()),
+        ).thenAnswer((_) async => [frozen]);
+        when(() => mockCompletionRepo.addCompletion(any()))
+            .thenAnswer((_) async {});
+
+        final result = await toggleUseCase.execute('h_1', testDate);
+
+        expect(result, isTrue);
+        verify(
+          () => mockCompletionRepo.addCompletion(
+            any(
+              that: predicate<HabitCompletion>(
+                (c) => !c.isFrozen && c.habitId == 'h_1',
+              ),
+            ),
+          ),
+        ).called(1);
+        verifyNever(() => mockCompletionRepo.removeCompletion(any(), any()));
+      },
+    );
   });
 }

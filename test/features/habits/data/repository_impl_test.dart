@@ -24,6 +24,17 @@ void main() {
   });
 
   group('Drift SQLite Repositories Integration Tests', () {
+    test('Схема БД создаёт индекс истории выполнений', () async {
+      final indexes = await database.customSelect(
+        '''SELECT name FROM sqlite_master
+               WHERE type = 'index'
+                 AND name = 'idx_completions_habit_date' ''',
+      ).get();
+
+      expect(database.schemaVersion, 2);
+      expect(indexes, hasLength(1));
+    });
+
     test('Сохранение и получение привычки из базы данных', () async {
       final habit = Habit(
         id: 'h_sql_1',

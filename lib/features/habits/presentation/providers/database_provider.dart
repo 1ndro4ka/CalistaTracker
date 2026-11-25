@@ -5,6 +5,7 @@ import '../../data/repositories/completion_repository_impl.dart';
 import '../../data/repositories/habit_repository_impl.dart';
 import '../../domain/repositories/completion_repository.dart';
 import '../../domain/repositories/habit_repository.dart';
+import '../../domain/usecases/apply_auto_freeze_use_case.dart';
 import '../../domain/usecases/calculate_stability_index_use_case.dart';
 import '../../domain/usecases/calculate_streak_use_case.dart';
 import '../../domain/usecases/manage_habit_use_case.dart';
@@ -49,4 +50,9 @@ final manageHabitUseCaseProvider = Provider<ManageHabitUseCase>((ref) {
     habitRepository: habitRepo,
     completionRepository: compRepo,
   );
+});
+
+final applyAutoFreezeUseCaseProvider = Provider<ApplyAutoFreezeUseCase>((ref) {
+  final compRepo = ref.watch(completionRepositoryProvider);
+  return ApplyAutoFreezeUseCase(completionRepository: compRepo);
 });

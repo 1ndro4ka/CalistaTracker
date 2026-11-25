@@ -24,6 +24,18 @@ class ToggleCompletionUseCase {
     );
 
     if (existing.isNotEmpty) {
+      final current = existing.first;
+
+      // Замороженный день — это «сохранённый» пропуск. Нажатие пользователя
+      // означает: «я всё-таки выполнил привычку», поэтому превращаем запись
+      // в реальное выполнение, а не удаляем её.
+      if (current.isFrozen) {
+        await completionRepository.addCompletion(
+          current.copyWith(isFrozen: false, recordedAt: clock.now()),
+        );
+        return true;
+      }
+
       await completionRepository.removeCompletion(habitId, normalizedDate);
       return false; // uncompleted
     } else {

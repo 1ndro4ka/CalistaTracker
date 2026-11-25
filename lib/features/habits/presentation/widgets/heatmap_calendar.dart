@@ -9,12 +9,14 @@ class HeatmapCalendar extends StatelessWidget {
   final Habit habit;
   final List<HabitCompletion> completions;
   final DateTime month;
+  final ValueChanged<DateTime>? onDayTap;
 
   const HeatmapCalendar({
     super.key,
     required this.habit,
     required this.completions,
     required this.month,
+    this.onDayTap,
   });
 
   @override
@@ -77,6 +79,11 @@ class HeatmapCalendar extends StatelessWidget {
             final isDone = comp != null && !comp.isFrozen;
             final isFrozen = comp != null && comp.isFrozen;
             final isToday = isCurrentMonth && today.day == dayNumber;
+            final isFuture = cellDate.isAfter(
+              DateTime(today.year, today.month, today.day),
+            );
+            final canToggle =
+                onDayTap != null && !isFuture && (isScheduled || comp != null);
 
             Color backgroundColor = Colors.transparent;
             Color borderColor = AppColors.border;
@@ -99,34 +106,38 @@ class HeatmapCalendar extends StatelessWidget {
                   : AppColors.textSecondary;
             }
 
-            return Container(
-              decoration: BoxDecoration(
-                color: backgroundColor,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: borderColor,
-                  width: isToday ? 1.2 : 0.8,
+            return GestureDetector(
+              onTap: canToggle ? () => onDayTap!(cellDate) : null,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: borderColor,
+                    width: isToday ? 1.2 : 0.8,
+                  ),
                 ),
-              ),
-              child: Center(
-                child: isFrozen
-                    ? const Text(
-                        '❄',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.freezeActive,
+                child: Center(
+                  child: isFrozen
+                      ? const Text(
+                          '❄',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.freezeActive,
+                          ),
+                        )
+                      : Text(
+                          '$dayNumber',
+                          style: AppTypography.caption.copyWith(
+                            color: textColor,
+                            fontWeight: isToday || isDone
+                                ? FontWeight.w700
+                                : FontWeight.w400,
+                            fontSize: 10,
+                          ),
                         ),
-                      )
-                    : Text(
-                        '$dayNumber',
-                        style: AppTypography.caption.copyWith(
-                          color: textColor,
-                          fontWeight: isToday || isDone
-                              ? FontWeight.w700
-                              : FontWeight.w400,
-                          fontSize: 10,
-                        ),
-                      ),
+                ),
               ),
             );
           },

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+
 import '../router/app_router.dart';
 
 /// Нативный для iOS жест «назад»: свайп от левого края к центру.
@@ -15,7 +16,10 @@ class EdgeBackGesture extends StatefulWidget {
 }
 
 class _EdgeBackGestureState extends State<EdgeBackGesture> {
-  static const double _edgeWidth = 24;
+  /// Старт в 36..90 px от левого края: системные жесты «назад» Android/iOS
+  /// забирают первые ~30 px, поэтому мы с ними не конфликтуем.
+  static const double _edgeStart = 36;
+  static const double _edgeEnd = 90;
   static const double _minDistance = 80;
   static const double _maxVerticalDrift = 60;
 
@@ -23,7 +27,10 @@ class _EdgeBackGestureState extends State<EdgeBackGesture> {
   double? _startY;
   bool _tracking = false;
 
-  bool get _enabled => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  // Включаем и на Android: системный жест «назад» и свайп приложения
+  // не конфликтуют, т.к. мы проверяем canPop() и срабатываем только на
+  // горизонтальном движении от самого края экрана.
+  bool get _enabled => !kIsWeb;
 
   void _reset() {
     _tracking = false;
@@ -37,7 +44,8 @@ class _EdgeBackGestureState extends State<EdgeBackGesture> {
       behavior: HitTestBehavior.translucent,
       onPointerDown: (event) {
         if (!_enabled) return;
-        if (event.position.dx <= _edgeWidth) {
+        final x = event.position.dx;
+        if (x >= _edgeStart && x <= _edgeEnd) {
           _startX = event.position.dx;
           _startY = event.position.dy;
           _tracking = true;

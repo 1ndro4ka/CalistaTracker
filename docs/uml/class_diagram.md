@@ -55,6 +55,45 @@ classDiagram
         +int missedDays
     }
 
+    class FreezePolicy {
+        +int monthlyAllowance
+        +bool canFreeze(int usedThisMonth)
+        +int remainingAfter(int usedThisMonth)
+        +String monthKey(DateTime date)$
+        +DateTime normalize(DateTime date)$
+    }
+
+    class ApplyAutoFreezeUseCase {
+        +CompletionRepository completionRepository
+        +Clock clock
+        +Future~AutoFreezeResult~ execute(Habit, List~HabitCompletion~, DateTime currentDate)
+    }
+
+    class AutoFreezeResult {
+        +List~HabitCompletion~ createdFreezes
+        +List~HabitCompletion~ allCompletions
+        +bool hasNewFreezes
+    }
+
+    class ReminderTime {
+        +int hour
+        +int minute
+        +ReminderTime? tryParse(String raw)$
+        +String value
+        +int minutesSinceMidnight
+    }
+
+    class ReminderScheduler {
+        <<interface>>
+        +Future~void~ initialize()
+        +Future~bool~ requestPermissions()
+        +Future~void~ syncHabitReminder(Habit habit)
+        +Future~void~ cancelHabitReminder(String habitId)
+        +Future~void~ syncAll(List~Habit~ habits)
+        +Stream~String~ habitTapStream
+        +String? consumeInitialPayload()
+    }
+
     class HabitRepository {
         <<interface>>
         +Future~List~Habit~~ getAllHabits()
@@ -97,6 +136,11 @@ classDiagram
     CalculateStabilityIndexUseCase ..> HabitCompletion : uses
     CalculateStabilityIndexUseCase ..> StabilityMetrics : produces
     ToggleCompletionUseCase ..> CompletionRepository : invokes
+    ApplyAutoFreezeUseCase ..> FreezePolicy : applies
+    ApplyAutoFreezeUseCase ..> CompletionRepository : writes freezes
+    ApplyAutoFreezeUseCase ..> AutoFreezeResult : produces
+    ReminderScheduler ..> Habit : schedules
+    ReminderScheduler ..> ReminderTime : parses
 ```
 
 ## Пояснения к классам:
@@ -104,4 +148,8 @@ classDiagram
 - `HabitCompletion`: запись о событии дня (выполнено либо автоматически заморожено `isFrozen: true`).
 - `StreakInfo`: объект-значение с расчетной текущей/рекордной серией и остатком заморозок на текущий месяц.
 - `StabilityMetrics`: метрика стабильности за 30 дней, отражающая реальную дисциплину без обнуления из-за единичного сбоя.
+- `FreezePolicy`: value object с месячным лимитом заморозок; не знает о БД и UI.
+- `ApplyAutoFreezeUseCase`: материализует заморозки пропущенных дней; идемпотентен и останавливается при исчерпании квоты.
+- `ReminderTime`: время `HH:mm` без зависимости от Flutter; парсится и тестируется отдельно.
+- `ReminderScheduler`: контракт планировщика; реализация (`LocalReminderScheduler`) находится в слое `data`.
 - `Clock`: абстракция времени, внедряемая в Use Cases для полной детерминированности тестов.

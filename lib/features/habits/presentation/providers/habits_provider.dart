@@ -8,6 +8,19 @@ import '../../domain/entities/stability_metrics.dart';
 import '../../domain/entities/streak_info.dart';
 import 'database_provider.dart';
 
+/// Счётчик изменений данных. На него смотрят производные провайдеры
+/// (например, статистика по дням недели), чтобы не кэшировать старые выборки.
+final dataRevisionProvider = NotifierProvider<DataRevisionNotifier, int>(
+  DataRevisionNotifier.new,
+);
+
+class DataRevisionNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state++;
+}
+
 class HabitItemViewData {
   final Habit habit;
   final bool isCompletedToday;
@@ -107,6 +120,8 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
 
   Future<void> loadHabits() => reload();
 
+  void _bumpRevision() => ref.read(dataRevisionProvider.notifier).bump();
+
   Future<void> toggleCompletion(String habitId) async {
     try {
       final toggleUseCase = ref.read(toggleCompletionUseCaseProvider);
@@ -120,6 +135,7 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
       }
 
       state = await AsyncValue.guard(() => _fetchHabits());
+      _bumpRevision();
 
       final currentList = state.value ?? <HabitItemViewData>[];
       final item = currentList
@@ -145,6 +161,7 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
       // Напоминания не должны блокировать удаление привычки.
     }
     state = await AsyncValue.guard(() => _fetchHabits());
+    _bumpRevision();
   }
 
   Future<void> saveHabit(Habit habit) async {
@@ -156,6 +173,7 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
       // Ошибка планировщика не должна отменять сохранение привычки.
     }
     state = await AsyncValue.guard(() => _fetchHabits());
+    _bumpRevision();
   }
 }
 

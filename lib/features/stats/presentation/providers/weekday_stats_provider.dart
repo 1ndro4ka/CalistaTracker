@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/clock_provider.dart';
 import '../../../habits/domain/entities/freeze_policy.dart';
 import '../../../habits/presentation/providers/database_provider.dart';
+import '../../../habits/presentation/providers/habits_provider.dart';
 
 class WeekdayHabitDetail {
   final String title;
@@ -43,6 +44,9 @@ class WeekdayStat {
 
 /// Реальная статистика по дням недели за текущий месяц.
 final weekdayStatsProvider = FutureProvider<List<WeekdayStat>>((ref) async {
+  // Любая запись/удаление привычки или отметки обновляет счётчик — и график
+  // пересчитывается, а не остаётся статичным до перезапуска приложения.
+  ref.watch(dataRevisionProvider);
   final habitRepo = ref.watch(habitRepositoryProvider);
   final completionRepo = ref.watch(completionRepositoryProvider);
   final now = ref.watch(clockProvider).now();

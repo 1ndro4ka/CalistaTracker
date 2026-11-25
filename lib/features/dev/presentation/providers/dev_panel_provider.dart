@@ -103,6 +103,7 @@ class DevPanelController {
 
   Future<void> _reloadHabits() async {
     await _ref.read(habitsProvider.notifier).reload();
+    _ref.read(dataRevisionProvider.notifier).bump();
   }
 
   Future<void> _resyncReminders() async {

@@ -329,18 +329,35 @@ class _MetricBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTypography.caption),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(fontSize: 10),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
               if (leading != null) ...[leading!, const SizedBox(width: 6)],
-              Flexible(child: Text(value, style: AppTypography.titleLarge)),
+              Flexible(
+                child: Text(
+                  value,
+                  style: AppTypography.titleLarge.copyWith(fontSize: 26),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             subtext,
-            style: AppTypography.caption.copyWith(color: AppColors.textMuted),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textMuted,
+              fontSize: 10,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

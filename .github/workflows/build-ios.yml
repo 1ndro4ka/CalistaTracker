@@ -1,0 +1,55 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build-ipa:
+    name: Unsigned IPA (Sideloadly)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      # Сборка без подписи: сертификат Apple Developer не требуется.
+      # Полученный .app упаковывается в Payload/ и устанавливается через
+      # Sideloadly с личным бесплатным Apple ID.
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package Runner.app into Payload/CalistaTracker.ipa
+        run: |
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          zip -r -q CalistaTracker.ipa Payload
+          ls -lh CalistaTracker.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calista-tracker-ios-ipa
+          path: build/ios/ipa/CalistaTracker.ipa
+          if-no-files-found: error
+          retention-days: 30

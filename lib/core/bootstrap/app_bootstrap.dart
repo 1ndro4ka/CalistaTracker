@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../providers/clock_provider.dart';
 import '../../features/habits/domain/entities/habit.dart';
 import '../../features/habits/presentation/providers/database_provider.dart';
 import '../../features/reminders/presentation/providers/reminder_providers.dart';
@@ -41,13 +42,18 @@ abstract final class AppBootstrap {
     final habitRepository = container.read(habitRepositoryProvider);
     final completionRepository = container.read(completionRepositoryProvider);
     final autoFreezeUseCase = container.read(applyAutoFreezeUseCaseProvider);
+    final currentDate = container.read(clockProvider).now();
 
     final habits = await habitRepository.getAllHabits(includeArchived: false);
     for (final habit in habits) {
       final completions = await completionRepository.getCompletionsForHabit(
         habit.id,
       );
-      await autoFreezeUseCase.execute(habit, completions);
+      await autoFreezeUseCase.execute(
+        habit,
+        completions,
+        currentDate: currentDate,
+      );
     }
     return habits;
   }

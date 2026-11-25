@@ -14,6 +14,9 @@ final class FixedClock implements Clock {
 
   FixedClock(DateTime initialTime) : _currentTime = initialTime;
 
+  /// Текущее «виртуальное» время — используется секретной панелью.
+  DateTime get currentTime => _currentTime;
+
   @override
   DateTime now() => _currentTime;
 
@@ -23,5 +26,10 @@ final class FixedClock implements Clock {
 
   void advance(Duration duration) {
     _currentTime = _currentTime.add(duration);
+  }
+
+  /// Вернуть системное время.
+  void reset() {
+    _currentTime = DateTime.now();
   }
 }

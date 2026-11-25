@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/providers/clock_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/date_formatters.dart';
@@ -18,17 +19,24 @@ class TodayScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitsProvider);
-    final now = DateTime.now();
+    final now = ref.watch(clockProvider).now();
     final formattedDate = AppDateFormatter.formatToday(now);
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(AppConstants.appName, style: AppTypography.titleLarge),
-            Text(formattedDate, style: AppTypography.caption),
-          ],
+        title: GestureDetector(
+          // Секретный вход в панель тестирования — доступен во всех сборках.
+          onLongPress: () {
+            AppFeedback.selection();
+            context.push('/dev');
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(AppConstants.appName, style: AppTypography.titleLarge),
+              Text(formattedDate, style: AppTypography.caption),
+            ],
+          ),
         ),
         actions: [
           IconButton(

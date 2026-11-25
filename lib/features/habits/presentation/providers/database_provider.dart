@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/clock_provider.dart';
 import '../../data/database/app_database.dart';
 import '../../data/repositories/completion_repository_impl.dart';
 import '../../data/repositories/habit_repository_impl.dart';
@@ -28,19 +29,22 @@ final completionRepositoryProvider = Provider<CompletionRepository>((ref) {
 });
 
 final calculateStreakUseCaseProvider = Provider<CalculateStreakUseCase>((ref) {
-  return const CalculateStreakUseCase();
+  return CalculateStreakUseCase(clock: ref.watch(clockProvider));
 });
 
 final calculateStabilityUseCaseProvider =
     Provider<CalculateStabilityIndexUseCase>((ref) {
-      return const CalculateStabilityIndexUseCase();
+      return CalculateStabilityIndexUseCase(clock: ref.watch(clockProvider));
     });
 
 final toggleCompletionUseCaseProvider = Provider<ToggleCompletionUseCase>((
   ref,
 ) {
   final compRepo = ref.watch(completionRepositoryProvider);
-  return ToggleCompletionUseCase(completionRepository: compRepo);
+  return ToggleCompletionUseCase(
+    completionRepository: compRepo,
+    clock: ref.watch(clockProvider),
+  );
 });
 
 final manageHabitUseCaseProvider = Provider<ManageHabitUseCase>((ref) {
@@ -54,5 +58,8 @@ final manageHabitUseCaseProvider = Provider<ManageHabitUseCase>((ref) {
 
 final applyAutoFreezeUseCaseProvider = Provider<ApplyAutoFreezeUseCase>((ref) {
   final compRepo = ref.watch(completionRepositoryProvider);
-  return ApplyAutoFreezeUseCase(completionRepository: compRepo);
+  return ApplyAutoFreezeUseCase(
+    completionRepository: compRepo,
+    clock: ref.watch(clockProvider),
+  );
 });

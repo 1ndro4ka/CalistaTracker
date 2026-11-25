@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/providers/clock_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../reminders/presentation/providers/reminder_providers.dart';
@@ -102,8 +103,8 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
       return;
     }
 
-    final id =
-        _existingHabit?.id ?? 'h_${DateTime.now().millisecondsSinceEpoch}';
+    final now = ref.read(clockProvider).now();
+    final id = _existingHabit?.id ?? 'h_${now.millisecondsSinceEpoch}';
     final schedule = _isEveryDay
         ? const HabitSchedule.everyDay()
         : HabitSchedule.specificDays(_selectedDays.toList()..sort());
@@ -117,7 +118,7 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
       schedule: schedule,
-      createdAt: _existingHabit?.createdAt ?? DateTime.now(),
+      createdAt: _existingHabit?.createdAt ?? now,
       reminderTime: reminderStr,
       monthlyFreezesAllowed: _monthlyFreezes,
     );

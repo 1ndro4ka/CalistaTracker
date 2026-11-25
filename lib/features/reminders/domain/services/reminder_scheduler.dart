@@ -27,4 +27,20 @@ abstract interface class ReminderScheduler {
   /// Payload уведомления, которое запустило приложение (холодный старт).
   /// Возвращает значение один раз.
   String? consumeInitialPayload();
+
+  /// Показать тестовое уведомление немедленно (секретная панель).
+  Future<void> showTestNotification({
+    required String title,
+    required String body,
+  });
+
+  /// Запланировать тестовое уведомление через [delay] (секретная панель).
+  Future<void> scheduleTestNotification({
+    required Duration delay,
+    required String title,
+    required String body,
+  });
+
+  /// Отменить запланированное тестовое уведомление.
+  Future<void> cancelTestNotification();
 }

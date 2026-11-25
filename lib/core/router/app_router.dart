@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/motion/motion_tokens.dart';
+import '../../features/dev/presentation/screens/dev_panel_screen.dart';
 import '../../features/habits/presentation/screens/habit_detail_screen.dart';
 import '../../features/habits/presentation/screens/habit_form_screen.dart';
 import '../../features/habits/presentation/screens/today_screen.dart';
@@ -77,6 +78,13 @@ abstract final class AppRouter {
         name: 'stats',
         pageBuilder: (context, state) =>
             _page(context, state, const StatsScreen()),
+      ),
+      // Скрытый маршрут: открывается долгим нажатием на заголовок «Сегодня».
+      GoRoute(
+        path: '/dev',
+        name: 'dev_panel',
+        pageBuilder: (context, state) =>
+            _page(context, state, const DevPanelScreen()),
       ),
     ],
   );

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/providers/clock_provider.dart';
 import '../../../reminders/presentation/providers/reminder_providers.dart';
 import '../../domain/entities/habit.dart';
 import '../../domain/entities/stability_metrics.dart';
@@ -53,7 +54,7 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
     final autoFreezeUseCase = ref.read(applyAutoFreezeUseCaseProvider);
 
     final habits = await habitRepo.getAllHabits(includeArchived: false);
-    final now = DateTime.now();
+    final now = ref.watch(clockProvider).now();
     final today = DateTime(now.year, now.month, now.day);
 
     final items = <HabitItemViewData>[];
@@ -109,7 +110,7 @@ class HabitsNotifier extends AsyncNotifier<List<HabitItemViewData>> {
   Future<void> toggleCompletion(String habitId) async {
     try {
       final toggleUseCase = ref.read(toggleCompletionUseCaseProvider);
-      final now = DateTime.now();
+      final now = ref.read(clockProvider).now();
       final wasCompleted = await toggleUseCase.execute(habitId, now);
 
       if (wasCompleted) {

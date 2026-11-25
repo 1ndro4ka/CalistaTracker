@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/providers/clock_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/date_formatters.dart';
@@ -39,6 +40,7 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _currentMonth = ref.read(clockProvider).now();
     _loadData();
   }
 
@@ -53,7 +55,7 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
     final habit = await habitRepo.getHabitById(widget.habitId);
     if (habit != null) {
       final storedCompletions = await compRepo.getCompletionsForHabit(habit.id);
-      final now = DateTime.now();
+      final now = ref.read(clockProvider).now();
       final freezeResult = await autoFreezeUseCase.execute(
         habit,
         storedCompletions,
@@ -273,6 +275,7 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
               habit: habit,
               completions: _completions,
               month: _currentMonth,
+              today: ref.watch(clockProvider).now(),
               onDayTap: _toggleDate,
             ),
           ),

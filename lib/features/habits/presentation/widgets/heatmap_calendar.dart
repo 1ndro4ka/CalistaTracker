@@ -10,6 +10,10 @@ class HeatmapCalendar extends StatelessWidget {
   final Habit habit;
   final List<HabitCompletion> completions;
   final DateTime month;
+
+  /// «Сегодня» приходит из [#clockProvider], чтобы секретная панель могла
+  /// подменять дату и проверять заморозки без ожидания реальных дней.
+  final DateTime today;
   final ValueChanged<DateTime>? onDayTap;
 
   const HeatmapCalendar({
@@ -17,6 +21,7 @@ class HeatmapCalendar extends StatelessWidget {
     required this.habit,
     required this.completions,
     required this.month,
+    required this.today,
     this.onDayTap,
   });
 
@@ -34,7 +39,6 @@ class HeatmapCalendar extends StatelessWidget {
       }
     }
 
-    final today = DateTime.now();
     final isCurrentMonth =
         today.year == month.year && today.month == month.month;
 

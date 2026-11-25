@@ -252,6 +252,49 @@ class LocalReminderScheduler implements ReminderScheduler {
     }
   }
 
+  /// ID тестового уведомления не пересекается с ID привычек (те < 1e9).
+  static const int _testNotificationId = 0x7ffffff0;
+
+  @override
+  Future<void> showTestNotification({
+    required String title,
+    required String body,
+  }) async {
+    await initialize();
+    if (!_available) return;
+    await _plugin.show(
+      id: _testNotificationId,
+      title: title,
+      body: body,
+      payload: null,
+    );
+  }
+
+  @override
+  Future<void> scheduleTestNotification({
+    required Duration delay,
+    required String title,
+    required String body,
+  }) async {
+    await initialize();
+    if (!_available) return;
+    await _plugin.zonedSchedule(
+      id: _testNotificationId,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.now(tz.local).add(delay),
+      notificationDetails: _notificationDetails,
+      androidScheduleMode: await _resolveScheduleMode(),
+    );
+  }
+
+  @override
+  Future<void> cancelTestNotification() async {
+    await initialize();
+    if (!_available) return;
+    await _plugin.cancel(id: _testNotificationId);
+  }
+
   AndroidFlutterLocalNotificationsPlugin? get _androidPlugin => _plugin
       .resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin

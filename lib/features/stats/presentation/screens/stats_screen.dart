@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../habits/presentation/providers/habits_provider.dart';
@@ -64,7 +66,21 @@ class StatsScreen extends ConsumerWidget {
                       style: AppTypography.caption,
                     ),
                     const SizedBox(height: 10),
-                    Text('$avgStability%', style: AppTypography.statValue),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 0,
+                        end: double.tryParse(avgStability) ?? 0,
+                      ),
+                      duration: MotionTokens.getDuration(
+                        context,
+                        MotionTokens.durationSlow,
+                      ),
+                      curve: MotionTokens.curveAppear,
+                      builder: (context, value, _) => Text(
+                        '${value.toStringAsFixed(1)}%',
+                        style: AppTypography.statValue,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'Среднее постоянство по всем ${habits.length} привычкам за 30 дней',
@@ -180,39 +196,60 @@ class StatsScreen extends ConsumerWidget {
                 style: AppTypography.caption,
               ),
               const SizedBox(height: 8),
-              ...habits.map(
-                (h) => Container(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.border, width: 0.8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          h.habit.title,
-                          style: AppTypography.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              ...habits.asMap().entries.map(
+                (entry) =>
+                    Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: AppColors.border,
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  entry.value.habit.title,
+                                  style: AppTypography.bodySmall,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                '${entry.value.stabilityMetrics.stabilityRate30Days}%',
+                                style: AppTypography.bodySmall.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .animate()
+                        .fadeIn(
+                          duration: MotionTokens.getDuration(
+                            context,
+                            MotionTokens.durationEntrance,
+                          ),
+                          delay: MotionTokens.staggerDelay(context, entry.key),
+                        )
+                        .slideY(
+                          begin: MotionTokens.entranceOffset,
+                          end: 0,
+                          duration: MotionTokens.getDuration(
+                            context,
+                            MotionTokens.durationEntrance,
+                          ),
+                          delay: MotionTokens.staggerDelay(context, entry.key),
                         ),
-                      ),
-                      Text(
-                        '${h.stabilityMetrics.stabilityRate30Days}%',
-                        style: AppTypography.bodySmall.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
             ],
           );
@@ -233,12 +270,20 @@ class _WeekdayBar extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 16,
-          height: 80 * heightPercent,
-          decoration: BoxDecoration(
-            color: AppColors.textPrimary,
-            borderRadius: BorderRadius.circular(2),
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: 80 * heightPercent),
+          duration: MotionTokens.getDuration(
+            context,
+            MotionTokens.durationSlow,
+          ),
+          curve: MotionTokens.curveAppear,
+          builder: (context, height, _) => Container(
+            width: 16,
+            height: height,
+            decoration: BoxDecoration(
+              color: AppColors.textPrimary,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
         ),
         const SizedBox(height: 8),

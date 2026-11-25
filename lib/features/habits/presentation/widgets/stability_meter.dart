@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
@@ -31,10 +32,25 @@ class StabilityMeter extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(label, style: AppTypography.caption),
-              Text(
-                '${percentage.toStringAsFixed(1)}%',
-                style: AppTypography.titleMedium.copyWith(
-                  fontWeight: FontWeight.w700,
+              AnimatedSwitcher(
+                duration: MotionTokens.getDuration(
+                  context,
+                  MotionTokens.durationMedium,
+                ),
+                switchInCurve: MotionTokens.curveAppear,
+                transitionBuilder: (child, animation) => SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.5),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: FadeTransition(opacity: animation, child: child),
+                ),
+                child: Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  key: ValueKey(percentage),
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -42,13 +58,22 @@ class StabilityMeter extends StatelessWidget {
           const SizedBox(height: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              value: clampedRatio,
-              backgroundColor: AppColors.surfaceMuted,
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                AppColors.textPrimary,
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey(percentage),
+              tween: Tween<double>(begin: 0, end: clampedRatio),
+              duration: MotionTokens.getDuration(
+                context,
+                MotionTokens.durationSlow,
               ),
-              minHeight: 4,
+              curve: MotionTokens.curveAppear,
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                backgroundColor: AppColors.surfaceMuted,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.textPrimary,
+                ),
+                minHeight: 4,
+              ),
             ),
           ),
         ],

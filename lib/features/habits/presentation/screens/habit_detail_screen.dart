@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,6 +27,9 @@ class HabitDetailScreen extends ConsumerStatefulWidget {
 
 class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
   DateTime _currentMonth = DateTime.now();
+
+  /// Направление листания календаря: -1 назад, 1 вперёд.
+  int _monthDirection = 1;
   bool _isLoading = true;
   Habit? _habit;
   List<HabitCompletion> _completions = [];
@@ -111,6 +115,10 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
     }
 
     final monthTitle = AppDateFormatter.formatMonthYear(_currentMonth);
+    final entrance = MotionTokens.getDuration(
+      context,
+      MotionTokens.durationEntrance,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -137,38 +145,75 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           // Title & Description
-          Text(habit.title, style: AppTypography.titleLarge),
+          Text(habit.title, style: AppTypography.titleLarge)
+              .animate()
+              .fadeIn(duration: entrance, curve: MotionTokens.curveAppear)
+              .slideY(
+                begin: MotionTokens.entranceOffset,
+                end: 0,
+                duration: entrance,
+                curve: MotionTokens.curveAppear,
+              ),
           if (habit.description.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(habit.description, style: AppTypography.bodySmall),
+            Text(
+              habit.description,
+              style: AppTypography.bodySmall,
+            ).animate().fadeIn(
+              duration: entrance,
+              delay: MotionTokens.staggerDelay(context, 1),
+            ),
           ],
           const SizedBox(height: 18),
 
           // Core Metrics Cards Grid
           Row(
-            children: [
-              Expanded(
-                child: _MetricCard(
-                  label: 'ТЕКУЩАЯ СЕРИЯ',
-                  value: '${_streakInfo.currentStreak} д',
-                  subtext: 'Рекорд: ${_streakInfo.longestStreak} д',
-                ),
+                children: [
+                  Expanded(
+                    child: _MetricCard(
+                      label: 'ТЕКУЩАЯ СЕРИЯ',
+                      value: '${_streakInfo.currentStreak} д',
+                      subtext: 'Рекорд: ${_streakInfo.longestStreak} д',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _MetricCard(
+                      label: 'ЗАМОРОЗКИ МЕСЯЦА',
+                      value:
+                          '❄ ${_streakInfo.freezesRemaining} / ${habit.monthlyFreezesAllowed}',
+                      subtext:
+                          'Использовано: ${_streakInfo.freezesUsedThisMonth}',
+                    ),
+                  ),
+                ],
+              )
+              .animate()
+              .fadeIn(
+                duration: entrance,
+                delay: MotionTokens.staggerDelay(context, 2),
+              )
+              .slideY(
+                begin: MotionTokens.entranceOffset,
+                end: 0,
+                duration: entrance,
+                delay: MotionTokens.staggerDelay(context, 2),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _MetricCard(
-                  label: 'ЗАМОРОЗКИ МЕСЯЦА',
-                  value:
-                      '❄ ${_streakInfo.freezesRemaining} / ${habit.monthlyFreezesAllowed}',
-                  subtext: 'Использовано: ${_streakInfo.freezesUsedThisMonth}',
-                ),
-              ),
-            ],
-          ),
           const SizedBox(height: 12),
 
           // 30-Day Stability Meter
-          StabilityMeter(percentage: _stabilityMetrics.stabilityRate30Days),
+          StabilityMeter(percentage: _stabilityMetrics.stabilityRate30Days)
+              .animate()
+              .fadeIn(
+                duration: entrance,
+                delay: MotionTokens.staggerDelay(context, 3),
+              )
+              .slideY(
+                begin: MotionTokens.entranceOffset,
+                end: 0,
+                duration: entrance,
+                delay: MotionTokens.staggerDelay(context, 3),
+              ),
           const SizedBox(height: 24),
 
           // Heatmap Calendar Section
@@ -183,6 +228,7 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
                     onPressed: () {
                       AppFeedback.selection();
                       setState(() {
+                        _monthDirection = -1;
                         _currentMonth = DateTime(
                           _currentMonth.year,
                           _currentMonth.month - 1,
@@ -195,6 +241,7 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
                     onPressed: () {
                       AppFeedback.selection();
                       setState(() {
+                        _monthDirection = 1;
                         _currentMonth = DateTime(
                           _currentMonth.year,
                           _currentMonth.month + 1,
@@ -208,11 +255,26 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
           ),
           const SizedBox(height: 8),
 
-          HeatmapCalendar(
-            habit: habit,
-            completions: _completions,
-            month: _currentMonth,
-            onDayTap: _toggleDate,
+          AnimatedSwitcher(
+            duration: MotionTokens.getDuration(
+              context,
+              MotionTokens.durationMedium,
+            ),
+            switchInCurve: MotionTokens.curveAppear,
+            transitionBuilder: (child, animation) => SlideTransition(
+              position: Tween<Offset>(
+                begin: Offset(_monthDirection * 0.08, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+            child: HeatmapCalendar(
+              key: ValueKey('${_currentMonth.year}-${_currentMonth.month}'),
+              habit: habit,
+              completions: _completions,
+              month: _currentMonth,
+              onDayTap: _toggleDate,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -223,28 +285,39 @@ class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
 
           // Info Box about Streak Freeze protection
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AppColors.border, width: 0.8),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('ℹ', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'При случайном пропуске запланированного дня серия не сгорает, а помечается как [❄ Заморожено] за счёт вашей месячной квоты.',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.border, width: 0.8),
                 ),
-              ],
-            ),
-          ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('ℹ', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'При случайном пропуске запланированного дня серия не сгорает, а помечается как [❄ Заморожено] за счёт вашей месячной квоты.',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              .animate()
+              .fadeIn(
+                duration: entrance,
+                delay: MotionTokens.staggerDelay(context, 4),
+              )
+              .slideY(
+                begin: MotionTokens.entranceOffset,
+                end: 0,
+                duration: entrance,
+                delay: MotionTokens.staggerDelay(context, 4),
+              ),
         ],
       ),
     );

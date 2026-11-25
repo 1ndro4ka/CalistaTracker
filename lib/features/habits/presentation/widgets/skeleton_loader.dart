@@ -14,20 +14,13 @@ class SkeletonLoader extends StatefulWidget {
 class _SkeletonLoaderState extends State<SkeletonLoader>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
+  static const _cycle = Duration(milliseconds: 1400);
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-
-    _opacityAnimation = Tween<double>(
-      begin: 0.3,
-      end: 0.7,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _controller = AnimationController(vsync: this, duration: _cycle)
+      ..repeat(reverse: true);
   }
 
   @override
@@ -36,16 +29,22 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
     super.dispose();
   }
 
+  /// Бегущая волна: каждая строка вспыхивает со своей фазой.
+  double _rowPhase(int index) {
+    final shifted = (_controller.value * 1.4 + index * 0.18) % 1.0;
+    return Curves.easeInOut.transform(shifted);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _opacityAnimation,
-      builder: (context, child) => Opacity(
-        opacity: _opacityAnimation.value,
-        child: Column(
-          children: List.generate(
-            widget.count,
-            (index) => Container(
+      animation: _controller,
+      builder: (context, child) => Column(
+        children: List.generate(
+          widget.count,
+          (index) => Opacity(
+            opacity: 0.25 + 0.55 * _rowPhase(index),
+            child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               height: 68,
               decoration: BoxDecoration(

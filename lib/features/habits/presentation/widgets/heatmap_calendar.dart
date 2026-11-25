@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/entities/habit.dart';
@@ -106,37 +107,55 @@ class HeatmapCalendar extends StatelessWidget {
                   : AppColors.textSecondary;
             }
 
-            return GestureDetector(
-              onTap: canToggle ? () => onDayTap!(cellDate) : null,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: borderColor,
-                    width: isToday ? 1.2 : 0.8,
+            return TweenAnimationBuilder<double>(
+              key: ValueKey(
+                '${month.year}-${month.month}-$dayNumber-$isDone-$isFrozen',
+              ),
+              tween: Tween<double>(begin: 0.82, end: 1),
+              duration: MotionTokens.getDuration(
+                context,
+                MotionTokens.durationMedium,
+              ),
+              curve: MotionTokens.curveBounce,
+              builder: (context, scale, child) =>
+                  Transform.scale(scale: scale, child: child),
+              child: GestureDetector(
+                onTap: canToggle ? () => onDayTap!(cellDate) : null,
+                behavior: HitTestBehavior.opaque,
+                child: AnimatedContainer(
+                  duration: MotionTokens.getDuration(
+                    context,
+                    MotionTokens.durationMedium,
                   ),
-                ),
-                child: Center(
-                  child: isFrozen
-                      ? const Text(
-                          '❄',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.freezeActive,
+                  curve: MotionTokens.curveAppear,
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: borderColor,
+                      width: isToday ? 1.2 : 0.8,
+                    ),
+                  ),
+                  child: Center(
+                    child: isFrozen
+                        ? const Text(
+                            '❄',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.freezeActive,
+                            ),
+                          )
+                        : Text(
+                            '$dayNumber',
+                            style: AppTypography.caption.copyWith(
+                              color: textColor,
+                              fontWeight: isToday || isDone
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                              fontSize: 10,
+                            ),
                           ),
-                        )
-                      : Text(
-                          '$dayNumber',
-                          style: AppTypography.caption.copyWith(
-                            color: textColor,
-                            fontWeight: isToday || isDone
-                                ? FontWeight.w700
-                                : FontWeight.w400,
-                            fontSize: 10,
-                          ),
-                        ),
+                  ),
                 ),
               ),
             );

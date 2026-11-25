@@ -59,12 +59,26 @@ class _HabitCardState extends State<HabitCard>
     _scaleController.reverse();
   }
 
+  /// Отделяем тактильный отклик от бизнес-логики переключения.
+  void _onToggle() {
+    if (widget.data.isCompletedToday) {
+      AppFeedback.uncheck();
+    } else {
+      AppFeedback.checkmark();
+    }
+    widget.onToggle();
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.data;
     final habit = item.habit;
     final streak = item.streakInfo;
     final isDone = item.isCompletedToday;
+    final duration = MotionTokens.getDuration(
+      context,
+      MotionTokens.durationMedium,
+    );
 
     return AnimatedBuilder(
       animation: _scaleAnimation,
@@ -74,7 +88,9 @@ class _HabitCardState extends State<HabitCard>
         onTapDown: _onTapDown,
         onTapUp: _onTapUp,
         onTapCancel: _onTapCancel,
-        child: Container(
+        child: AnimatedContainer(
+          duration: duration,
+          curve: MotionTokens.curveAppear,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -89,16 +105,16 @@ class _HabitCardState extends State<HabitCard>
             children: [
               // Checkbox button
               GestureDetector(
-                onTap: widget.onToggle,
+                onTap: _onToggle,
                 behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
-                  duration: MotionTokens.durationFast,
+                  duration: duration,
                   curve: MotionTokens.curveAppear,
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
                     color: isDone ? AppColors.accent : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(isDone ? 7 : 4),
                     border: Border.all(
                       color: isDone
                           ? AppColors.accent
@@ -106,14 +122,20 @@ class _HabitCardState extends State<HabitCard>
                       width: 1.0,
                     ),
                   ),
-                  child: Center(
+                  child: AnimatedSwitcher(
+                    duration: duration,
+                    switchInCurve: MotionTokens.curveBounce,
+                    switchOutCurve: MotionTokens.curveAppear,
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
                     child: isDone
                         ? const Icon(
                             Icons.check,
+                            key: ValueKey('checked'),
                             size: 20,
                             color: AppColors.background,
                           )
-                        : null,
+                        : const SizedBox.shrink(key: ValueKey('unchecked')),
                   ),
                 ),
               ),
@@ -124,16 +146,20 @@ class _HabitCardState extends State<HabitCard>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      habit.title,
+                    AnimatedDefaultTextStyle(
+                      duration: duration,
+                      curve: MotionTokens.curveAppear,
                       style: AppTypography.titleMedium.copyWith(
                         decoration: isDone ? TextDecoration.lineThrough : null,
                         color: isDone
                             ? AppColors.textSecondary
                             : AppColors.textPrimary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        habit.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -188,13 +214,29 @@ class _HabitCardState extends State<HabitCard>
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '${streak.currentStreak}',
-                        style: AppTypography.titleMedium.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: streak.currentStreak > 0
-                              ? AppColors.textPrimary
-                              : AppColors.textMuted,
+                      AnimatedSwitcher(
+                        duration: duration,
+                        switchInCurve: MotionTokens.curveAppear,
+                        transitionBuilder: (child, animation) =>
+                            SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(0, 0.6),
+                                end: Offset.zero,
+                              ).animate(animation),
+                              child: FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              ),
+                            ),
+                        child: Text(
+                          '${streak.currentStreak}',
+                          key: ValueKey(streak.currentStreak),
+                          style: AppTypography.titleMedium.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: streak.currentStreak > 0
+                                ? AppColors.textPrimary
+                                : AppColors.textMuted,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 2),

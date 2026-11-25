@@ -437,9 +437,19 @@ class _HabitFormScreenState extends ConsumerState<HabitFormScreen> {
                                   }
                                 : null,
                           ),
-                          Text(
-                            '$_monthlyFreezes',
-                            style: AppTypography.titleMedium,
+                          AnimatedSwitcher(
+                            duration: MotionTokens.getDuration(
+                              context,
+                              MotionTokens.durationFast,
+                            ),
+                            switchInCurve: MotionTokens.curveBounce,
+                            transitionBuilder: (child, animation) =>
+                                ScaleTransition(scale: animation, child: child),
+                            child: Text(
+                              '$_monthlyFreezes',
+                              key: ValueKey(_monthlyFreezes),
+                              style: AppTypography.titleMedium,
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.add, size: 16),
@@ -491,7 +501,12 @@ class _ScheduleOption extends StatelessWidget {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
+        child: AnimatedContainer(
+          duration: MotionTokens.getDuration(
+            context,
+            MotionTokens.durationFast,
+          ),
+          curve: MotionTokens.curveAppear,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.accent : AppColors.surface,
@@ -535,7 +550,9 @@ class _DayChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onToggle,
-      child: Container(
+      child: AnimatedContainer(
+        duration: MotionTokens.getDuration(context, MotionTokens.durationFast),
+        curve: MotionTokens.curveAppear,
         width: 38,
         height: 38,
         decoration: BoxDecoration(

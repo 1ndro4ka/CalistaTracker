@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -61,7 +62,24 @@ class TodayScreen extends ConsumerWidget {
         ),
         data: (habits) {
           if (habits.isEmpty) {
-            return _EmptyHabitsState(onAdd: () => context.push('/habits/new'));
+            return _EmptyHabitsState(onAdd: () => context.push('/habits/new'))
+                .animate()
+                .fadeIn(
+                  duration: MotionTokens.getDuration(
+                    context,
+                    MotionTokens.durationEntrance,
+                  ),
+                  curve: MotionTokens.curveAppear,
+                )
+                .slideY(
+                  begin: MotionTokens.entranceOffset,
+                  end: 0,
+                  duration: MotionTokens.getDuration(
+                    context,
+                    MotionTokens.durationEntrance,
+                  ),
+                  curve: MotionTokens.curveAppear,
+                );
           }
 
           final scheduledToday = habits
@@ -105,10 +123,29 @@ class TodayScreen extends ConsumerWidget {
                               'ВЫПОЛНЕНО СЕГОДНЯ: $completedToday / $totalToday',
                               style: AppTypography.caption,
                             ),
-                            Text(
-                              '[$progressPercent%]',
-                              style: AppTypography.caption.copyWith(
-                                fontWeight: FontWeight.w700,
+                            AnimatedSwitcher(
+                              duration: MotionTokens.getDuration(
+                                context,
+                                MotionTokens.durationMedium,
+                              ),
+                              switchInCurve: MotionTokens.curveAppear,
+                              transitionBuilder: (child, animation) =>
+                                  SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.4),
+                                      end: Offset.zero,
+                                    ).animate(animation),
+                                    child: FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    ),
+                                  ),
+                              child: Text(
+                                '[$progressPercent%]',
+                                key: ValueKey(progressPercent),
+                                style: AppTypography.caption.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
@@ -116,15 +153,29 @@ class TodayScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: totalToday > 0
-                                ? (completedToday / totalToday)
-                                : 0,
-                            backgroundColor: AppColors.surfaceMuted,
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.textPrimary,
+                          child: TweenAnimationBuilder<double>(
+                            key: ValueKey(progressPercent),
+                            tween: Tween<double>(
+                              begin: 0,
+                              end: totalToday > 0
+                                  ? completedToday / totalToday
+                                  : 0,
                             ),
-                            minHeight: 3,
+                            duration: MotionTokens.getDuration(
+                              context,
+                              MotionTokens.durationSlow,
+                            ),
+                            curve: MotionTokens.curveAppear,
+                            builder: (context, value, _) =>
+                                LinearProgressIndicator(
+                                  value: value,
+                                  backgroundColor: AppColors.surfaceMuted,
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                        AppColors.textPrimary,
+                                      ),
+                                  minHeight: 3,
+                                ),
                           ),
                         ),
                       ],
@@ -132,54 +183,75 @@ class TodayScreen extends ConsumerWidget {
                   ),
 
                 // Habit Cards
-                ...habits.map((item) {
+                ...habits.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
                   return Dismissible(
-                    key: Key(item.habit.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      color: AppColors.errorSubtle,
-                      child: const Icon(
-                        Icons.delete_outline,
-                        color: AppColors.error,
-                      ),
-                    ),
-                    onDismissed: (_) {
-                      final removedHabit = item.habit;
-                      ref
-                          .read(habitsProvider.notifier)
-                          .deleteHabit(removedHabit.id);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: AppColors.surfaceElevated,
-                          content: Text(
-                            'Привычка «${removedHabit.title}» удалена',
-                            style: AppTypography.bodySmall,
-                          ),
-                          action: SnackBarAction(
-                            textColor: AppColors.textPrimary,
-                            label: 'Отменить',
-                            onPressed: () {
-                              ref
-                                  .read(habitsProvider.notifier)
-                                  .saveHabit(removedHabit);
-                            },
+                        key: Key(item.habit.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          color: AppColors.errorSubtle,
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.error,
                           ),
                         ),
+                        onDismissed: (_) {
+                          final removedHabit = item.habit;
+                          ref
+                              .read(habitsProvider.notifier)
+                              .deleteHabit(removedHabit.id);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppColors.surfaceElevated,
+                              content: Text(
+                                'Привычка «${removedHabit.title}» удалена',
+                                style: AppTypography.bodySmall,
+                              ),
+                              action: SnackBarAction(
+                                textColor: AppColors.textPrimary,
+                                label: 'Отменить',
+                                onPressed: () {
+                                  ref
+                                      .read(habitsProvider.notifier)
+                                      .saveHabit(removedHabit);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: HabitCard(
+                          data: item,
+                          onTap: () => context.push('/habits/${item.habit.id}'),
+                          onToggle: () {
+                            ref
+                                .read(habitsProvider.notifier)
+                                .toggleCompletion(item.habit.id);
+                          },
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(
+                        duration: MotionTokens.getDuration(
+                          context,
+                          MotionTokens.durationEntrance,
+                        ),
+                        delay: MotionTokens.staggerDelay(context, index),
+                        curve: MotionTokens.curveAppear,
+                      )
+                      .slideY(
+                        begin: MotionTokens.entranceOffset,
+                        end: 0,
+                        duration: MotionTokens.getDuration(
+                          context,
+                          MotionTokens.durationEntrance,
+                        ),
+                        delay: MotionTokens.staggerDelay(context, index),
+                        curve: MotionTokens.curveAppear,
                       );
-                    },
-                    child: HabitCard(
-                      data: item,
-                      onTap: () => context.push('/habits/${item.habit.id}'),
-                      onToggle: () {
-                        ref
-                            .read(habitsProvider.notifier)
-                            .toggleCompletion(item.habit.id);
-                      },
-                    ),
-                  );
                 }),
               ],
             ),

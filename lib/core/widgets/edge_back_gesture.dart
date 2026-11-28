@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-
 import '../router/app_router.dart';
 
 /// Нативный для iOS жест «назад»: свайп от левого края к центру.
